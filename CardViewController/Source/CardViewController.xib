@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="11198.2" systemVersion="15G1004" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11161"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <viewController id="4hg-UC-Q7x" customClass="CardViewController" customModule="CardViewController" customModuleProvider="target">
+            <layoutGuides>
+                <viewControllerLayoutGuide type="top" id="iag-ZG-bcI"/>
+                <viewControllerLayoutGuide type="bottom" id="Hr8-dX-U8S"/>
+            </layoutGuides>
+            <view key="view" contentMode="scaleToFill" id="0wV-td-5YW">
+                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                <subviews>
+                    <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" directionalLockEnabled="YES" alwaysBounceHorizontal="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" translatesAutoresizingMaskIntoConstraints="NO" id="yIf-Mh-bFq">
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="amy-oj-dpQ" userLabel="ContentView"/>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="amy-oj-dpQ" firstAttribute="top" secondItem="yIf-Mh-bFq" secondAttribute="top" id="VAV-7J-I8o"/>
+                            <constraint firstItem="amy-oj-dpQ" firstAttribute="leading" secondItem="yIf-Mh-bFq" secondAttribute="leading" id="dR0-6g-8to"/>
+                            <constraint firstAttribute="bottom" secondItem="amy-oj-dpQ" secondAttribute="bottom" id="lmt-Ay-AuO"/>
+                            <constraint firstAttribute="trailing" secondItem="amy-oj-dpQ" secondAttribute="trailing" id="vnN-88-SIe"/>
+                        </constraints>
+                        <connections>
+                            <outlet property="delegate" destination="4hg-UC-Q7x" id="Jt1-2t-AWB"/>
+                        </connections>
+                    </scrollView>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="yIf-Mh-bFq" firstAttribute="leading" secondItem="0wV-td-5YW" secondAttribute="leading" id="LHR-Ty-8P5"/>
+                    <constraint firstItem="amy-oj-dpQ" firstAttribute="height" secondItem="0wV-td-5YW" secondAttribute="height" id="M8j-Dx-BIb"/>
+                    <constraint firstAttribute="trailing" secondItem="yIf-Mh-bFq" secondAttribute="trailing" id="VO4-PG-Q83"/>
+                    <constraint firstItem="yIf-Mh-bFq" firstAttribute="top" secondItem="0wV-td-5YW" secondAttribute="topMargin" id="X3w-Xu-kzL"/>
+                    <constraint firstItem="amy-oj-dpQ" firstAttribute="width" secondItem="0wV-td-5YW" secondAttribute="width" placeholder="YES" id="eU1-Rf-glE"/>
+                    <constraint firstAttribute="bottomMargin" secondItem="yIf-Mh-bFq" secondAttribute="bottom" id="l8H-lr-c7b"/>
+                </constraints>
+            </view>
+            <connections>
+                <outlet property="contentView" destination="amy-oj-dpQ" id="606-7L-Xf7"/>
+                <outlet property="scrollView" destination="yIf-Mh-bFq" id="0Iu-B3-udo"/>
+            </connections>
+            <point key="canvasLocation" x="1" y="-37"/>
+        </viewController>
+    </objects>
+</document>
