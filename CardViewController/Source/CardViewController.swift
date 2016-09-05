@@ -50,20 +50,9 @@ public class CardViewController: UIViewController {
     @IBOutlet weak var contentView: UIView!
     
     //MARK: Life cycle
-    
-    override public func viewDidLoad() {
-        super.viewDidLoad()
-        applyCameraPerspective()
-    }
 
     
     //MARK: Private
-    
-    private func applyCameraPerspective() {
-        var perspective = CATransform3DIdentity
-        perspective.m34 = -1/500
-        contentView.layer.sublayerTransform = perspective
-    }
     
     private func add(controllers: [UIViewController]) {
         cards.forEach { addChildViewController($0) }
@@ -77,6 +66,14 @@ public class CardViewController: UIViewController {
                 controllerView.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
                 ])
         }
+
+        var perspective = CATransform3DIdentity
+        perspective.m34 = -1/500
+        
+        cards.flatMap{$0.view}.dropFirst().forEach {
+            $0.layer.transform = CATransform3DRotate(perspective, -degreesToRadians(degreesToRotate), 0, 1, 0)
+        }
+        
         cards.forEach { $0.didMove(toParentViewController: self) }
     }
 }
@@ -135,11 +132,11 @@ extension CardViewController: UIScrollViewDelegate {
         let sourceRads = degreesToRadians(sourceTransitionProgress * degreesToRotate)
         let destRads = degreesToRadians(destTransitionProgress * degreesToRotate)
         
-        print("Source \(transitionSourceElementIndex) degrees: \(sourceTransitionProgress * degreesToRotate), dest: \(transitionDestinationElementIndex) degrees: \(destTransitionProgress * degreesToRotate)")
-        
         //Update rotation transform accordingly
-        sourceCard.layer.transform = CATransform3DMakeRotation(sourceRads, 0, 1, 0)
-        destinationCard.layer.transform = CATransform3DMakeRotation(destRads, 0, 1, 0)
+        var perspective = CATransform3DIdentity
+        perspective.m34 = -1/500
+        sourceCard.layer.transform = CATransform3DRotate(perspective, sourceRads, 0, 1, 0)
+        destinationCard.layer.transform = CATransform3DRotate(perspective, destRads, 0, 1, 0)
     }
     
     public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
@@ -188,14 +185,12 @@ extension CardViewController: UIScrollViewDelegate {
     public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate {
             //Save the current page index
-            print("did end dragging: saving")
             currentPageIndex = scrollView.currentPage()
         }
     }
     
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         //Save the current page index
-        print("did end decelerating: saving")
         currentPageIndex = scrollView.currentPage()
     }
 }
