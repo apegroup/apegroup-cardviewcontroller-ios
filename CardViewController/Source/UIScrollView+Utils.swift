@@ -51,7 +51,7 @@ extension UIScrollView {
      Maximum value is 'contentSize.width - pageSize' (i.e. left of last page)
      */
     func maximumHorizontalOffset() -> CGFloat {
-        return contentSize.width - frame.width
+        return contentSize.width - pageSize()
     }
     
     /**
@@ -67,7 +67,7 @@ extension UIScrollView {
     }
     
     func pageSize() -> CGFloat {
-        //TODO: Fix frame.size.width
-        return UIScreen.main.bounds.width / 2
+        //TODO: Configurable page size
+        return bounds.size.width / 2
     }
 }

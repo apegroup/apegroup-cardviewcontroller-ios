@@ -7,7 +7,7 @@
 //
 
 import UIKit
-
+import GLKit
 
 public struct CardViewControllerFactory {
     
@@ -18,7 +18,7 @@ public struct CardViewControllerFactory {
             .instantiate(withOwner: nil, options: nil)
         
         let vc = nib.first as! CardViewController
-        vc.cards = cards
+        vc.cardViewControllers = cards
         return vc
     }
 }
@@ -27,72 +27,124 @@ public class CardViewController: UIViewController {
     
     //MARK: Configurable
     
-    let degreesToRotate: CGFloat = 45
+    public var degreesToRotate: CGFloat = 45
+    public var isPagingEnabled = true
     
     //MARK: Properties
     
-    fileprivate var currentPageIndex: Int = 0
+    fileprivate var currentCardIndex: Int = 0
+    fileprivate var cardViewControllers: [UIViewController] = []
     
-    fileprivate var cards: [UIViewController] = [] {
-        
-        willSet {
-            //TODO: Remove previous cards
-        }
-        
-        didSet {
-            add(controllers: cards)
-        }
-    }
+    private var hasLaidOutSubviews = false
+    private var leadingConstraint: NSLayoutConstraint?
+    private var trailingConstraint: NSLayoutConstraint?
     
     //MARK: IBOutlets
     
     @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var contentView: UIView!
     
-    //MARK: Life cycle
-
+    //MARK: Rotation related events
     
+    override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        updateOrientationRelatedConstraints()
+    }
+    
+    /// Activates/deactivates the appropriate leading and trailing constraints, depending on the current device orientation
+    private func updateOrientationRelatedConstraints() {
+        guard let firstCard = cardViewControllers.first?.view,
+            let lastCard = cardViewControllers.last?.view,
+            let contentView = firstCard.superview else {
+                return
+        }
+        
+        //Deactivate old constraints
+        //TODO: Remove idle constraints (instead of deactivating)
+        leadingConstraint?.isActive = false
+        trailingConstraint?.isActive = false
+        
+        //Create new constraints with the updated border margin
+        let borderMargin = self.view.bounds.width/4
+        leadingConstraint = firstCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: borderMargin)
+        trailingConstraint = contentView.trailingAnchor.constraint(equalTo: lastCard.trailingAnchor, constant: borderMargin)
+        
+        //Activate new constraints
+        leadingConstraint?.isActive = true
+        trailingConstraint?.isActive = true
+        
+        //TODO: Re-apply rotation
+    }
+    
+    //MARK: Life cycle
+    
+    override public func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // Wait until 'viewDidAppear' to layout the 'card-views' since 'self.view'
+        // has not been laid out prior to that (and therefore we don't have a reliable 'self.view.frame')
+        if !hasLaidOutSubviews {
+            hasLaidOutSubviews = true
+            add(childControllers: cardViewControllers)
+        }
+    }
+
     //MARK: Private
     
-    private func add(controllers: [UIViewController]) {
-        cards.forEach { addChildViewController($0) }
-        contentView.addViewsHorizontally(cards.flatMap { $0.view })
-        
-        cards.forEach { controller in
-            let controllerView = controller.view!
-            NSLayoutConstraint.activate([
-                controllerView.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5),
-                controllerView.heightAnchor.constraint(equalTo: controllerView.widthAnchor),
-                controllerView.centerYAnchor.constraint(equalTo: self.view.centerYAnchor)
-                ])
-        }
+    private func add(childControllers: [UIViewController]) {
+        let borderMargin = self.view.bounds.width/4
+        var prevView: UIView?
+        for (index, cardViewController) in cardViewControllers.enumerated() {
 
-        var perspective = CATransform3DIdentity
-        perspective.m34 = -1/500
-        
-        cards.flatMap{$0.view}.dropFirst().forEach {
-            $0.layer.transform = CATransform3DRotate(perspective, -degreesToRadians(degreesToRotate), 0, 1, 0)
+            //Add each view controller as a child
+            addChildViewController(cardViewController)
+            
+            //Add view as subview
+            let cardView = cardViewController.view!
+            contentView.addSubview(cardView)
+            cardView.translatesAutoresizingMaskIntoConstraints = false
+            cardView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+            cardView.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5).isActive = true
+            cardView.heightAnchor.constraint(equalTo: cardView.widthAnchor).isActive = true
+            
+            //Set up horizontal constraints
+            if prevView == nil {
+                //First view - Pin card to superview's leading anchor
+                leadingConstraint = cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: borderMargin)
+                leadingConstraint?.isActive = true
+                
+            } else {
+                //All other views - to to previous view's trailing anchor
+                cardView.leadingAnchor.constraint(equalTo: prevView!.trailingAnchor).isActive = true
+            }
+            
+            //Apply initial rotation for all views except the first
+            if index > 0 {
+                rotate(cardView.layer, degrees: -degreesToRotate)
+            }
+            
+            cardViewController.didMove(toParentViewController: self)
+            prevView = cardView;
         }
         
-        cards.forEach { $0.didMove(toParentViewController: self) }
+        //Last view - pin to container view's trailing anchor
+        trailingConstraint = contentView.trailingAnchor.constraint(equalTo: prevView!.trailingAnchor, constant: borderMargin)
+        trailingConstraint?.isActive = true
+    }
+    
+    /// Applies a 3D rotation to the received layer
+    fileprivate func rotate(_ layer: CALayer, degrees: CGFloat) {
+        var perspective = CATransform3DIdentity
+        perspective.m34 = -1/500 //500 seems to be a good value
+        layer.transform = CATransform3DRotate(perspective, CGFloat(GLKMathDegreesToRadians(Float(degrees))), 0, 1, 0)
     }
 }
 
 extension CardViewController: UIScrollViewDelegate {
     
-    
-    //Scroll view with paging
-    //Each page is a child view controller's view
-    //
-    /*
-     When scrolling view:
-     - if dest view:
-     - rotate the source and dest views interactively
-     - set alpha
-     */
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
         
-        let isGoingBackwards = scrollView.currentPage() < currentPageIndex
+        let isGoingBackwards = scrollView.currentPage() < currentCardIndex
         
         //"percentScrolledInPage" represents the X-scroll percentage within the current page, starting at index 0.
         //E.g. if the scroll view is 50% between page 5 and 6, the  will be 4.5
@@ -127,72 +179,67 @@ extension CardViewController: UIScrollViewDelegate {
             let destinationCard = card(at: transitionDestinationElementIndex) else {
                 return
         }
-
-        //Calculate radians from transition progress
-        let sourceRads = degreesToRadians(sourceTransitionProgress * degreesToRotate)
-        let destRads = degreesToRadians(destTransitionProgress * degreesToRotate)
+        
+        //Calculate degrees to rotate
+        let sourceDegrees = sourceTransitionProgress * degreesToRotate
+        let destDegrees = destTransitionProgress * degreesToRotate
         
         //Update rotation transform accordingly
-        var perspective = CATransform3DIdentity
-        perspective.m34 = -1/500
-        sourceCard.layer.transform = CATransform3DRotate(perspective, sourceRads, 0, 1, 0)
-        destinationCard.layer.transform = CATransform3DRotate(perspective, destRads, 0, 1, 0)
+        rotate(sourceCard.layer, degrees: sourceDegrees)
+        rotate(destinationCard.layer, degrees: destDegrees)
     }
     
-    public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-        //Meta data
-        let minIndex: CGFloat = 0
-        let maxIndex = CGFloat(cards.count)
-        let cardWidth: CGFloat = UIScreen.main.bounds.width / 2
-        let cardSpacing: CGFloat = 0
-        
-        //Calculate x coordinate of destination, including velocity
-        let destX = scrollView.contentOffset.x + velocity.x             //TODO: * 60.0 What is this "* 60" ?
-        
-        //Calculate index of destination
-        var destCardIndex = round(destX / (cardWidth + cardSpacing))
-        
-        //Avoid "jumping" to initial position when making very small swipes
-        if velocity.x > 0 {
-            destCardIndex = ceil(destX / (cardWidth + cardSpacing))
-        } else {
-            destCardIndex = floor(destX / (cardWidth + cardSpacing))
-        }
-        
-        //Ensure index is within bounds
-        if destCardIndex < minIndex {
-            destCardIndex = minIndex
-        } else if destCardIndex > maxIndex {
-            destCardIndex = maxIndex
-        }
-        
-        //Update target content offset
-        targetContentOffset.pointee.x = destCardIndex * (cardWidth + cardSpacing)
-    }
-    
-    fileprivate func degreesToRadians(_ degrees: CGFloat) -> CGFloat {
-        return degrees * 3.1459 / 180
-    }
-    
+    /// Returns the card at the received index, or nil if the index is out of bounds
     private func card(at index: Int) -> UIView? {
-        guard index >= 0 && index < cards.count else {
+        guard index >= 0 && index < cardViewControllers.count else {
             return nil
         }
         
-        return cards[index].view
+        return cardViewControllers[index].view
     }
     
+    //Update the target content offset to the nearest card
+    public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+        guard isPagingEnabled else {
+            return
+        }
+        guard let cardSize = card(at: 0)?.bounds.width else {
+            return
+        }
+        
+        let cardSpacing: CGFloat = 0
+        let minIndex: CGFloat = 0
+        let maxIndex = CGFloat(cardViewControllers.count)
+        
+        //Calculate x coordinate of destination, including velocity
+        let destX = scrollView.contentOffset.x + velocity.x
+        
+        //Calculate index of destination card
+        var destCardIndex = round(destX / (cardSize + cardSpacing))
+        
+        //Avoid "jumping" to initial position when making very small swipes
+        if velocity.x > 0 {
+            destCardIndex = ceil(destX / (cardSize + cardSpacing))
+        } else {
+            destCardIndex = floor(destX / (cardSize + cardSpacing))
+        }
+        
+        //Ensure index is within bounds
+        destCardIndex = max(minIndex, min(maxIndex, destCardIndex))
+        
+        //Update target content offset
+        targetContentOffset.pointee.x = destCardIndex * (cardSize + cardSpacing)
+    }
+    
+    ///Save the index of the current card when the scroll view has stopped scrolling
     public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate {
-            //Save the current page index
-            currentPageIndex = scrollView.currentPage()
+            currentCardIndex = scrollView.currentPage()
         }
     }
     
+    ///Save the index of the current card when the scroll view has stopped scrolling
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        //Save the current page index
-        currentPageIndex = scrollView.currentPage()
+        currentCardIndex = scrollView.currentPage()
     }
 }
-
-

@@ -11,7 +11,6 @@
 		5FB0D2FF1D7A01100000070F /* CardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB0D2FE1D7A01100000070F /* CardViewController.swift */; };
 		5FB0D3021D7A02D30000070F /* CardViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5FB0D3011D7A02D30000070F /* CardViewController.xib */; };
 		5FB0D3041D7A0DDB0000070F /* UIScrollView+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB0D3031D7A0DDB0000070F /* UIScrollView+Utils.swift */; };
-		5FC0D7181D7B5F3A00FB13B0 /* UIView+LayoutUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FC0D7171D7B5F3A00FB13B0 /* UIView+LayoutUtils.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,7 +20,6 @@
 		5FB0D2FE1D7A01100000070F /* CardViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardViewController.swift; sourceTree = "<group>"; };
 		5FB0D3011D7A02D30000070F /* CardViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = CardViewController.xib; sourceTree = "<group>"; };
 		5FB0D3031D7A0DDB0000070F /* UIScrollView+Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIScrollView+Utils.swift"; sourceTree = "<group>"; };
-		5FC0D7171D7B5F3A00FB13B0 /* UIView+LayoutUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIView+LayoutUtils.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,7 +65,6 @@
 				5FB0D2FE1D7A01100000070F /* CardViewController.swift */,
 				5FB0D3011D7A02D30000070F /* CardViewController.xib */,
 				5FB0D3031D7A0DDB0000070F /* UIScrollView+Utils.swift */,
-				5FC0D7171D7B5F3A00FB13B0 /* UIView+LayoutUtils.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -155,7 +152,6 @@
 			files = (
 				5FB0D2FF1D7A01100000070F /* CardViewController.swift in Sources */,
 				5FB0D3041D7A0DDB0000070F /* UIScrollView+Utils.swift in Sources */,
-				5FC0D7181D7B5F3A00FB13B0 /* UIView+LayoutUtils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
