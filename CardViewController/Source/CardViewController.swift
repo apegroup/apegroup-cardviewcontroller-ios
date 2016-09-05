@@ -27,7 +27,7 @@ public class CardViewController: UIViewController {
     
     //MARK: Configurable
     
-    public var degreesToRotate: CGFloat = 45
+    public var degreesToRotate: CGFloat = 55
     public var isPagingEnabled = true
     
     //MARK: Properties
@@ -36,13 +36,13 @@ public class CardViewController: UIViewController {
     fileprivate var cardViewControllers: [UIViewController] = []
     
     private var hasLaidOutSubviews = false
-    private var leadingConstraint: NSLayoutConstraint?
-    private var trailingConstraint: NSLayoutConstraint?
     
     //MARK: IBOutlets
     
     @IBOutlet weak var scrollView: UIScrollView!
-    @IBOutlet weak var contentView: UIView!
+    @IBOutlet weak var contentView: UIStackView!
+    @IBOutlet weak var leadingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var trailingConstraint: NSLayoutConstraint!
     
     //MARK: Rotation related events
     
@@ -51,27 +51,11 @@ public class CardViewController: UIViewController {
         updateOrientationRelatedConstraints()
     }
     
-    /// Activates/deactivates the appropriate leading and trailing constraints, depending on the current device orientation
+    /// Updates the leading and trailing constraints to be 1/4 of the device width
     private func updateOrientationRelatedConstraints() {
-        guard let firstCard = cardViewControllers.first?.view,
-            let lastCard = cardViewControllers.last?.view,
-            let contentView = firstCard.superview else {
-                return
-        }
-        
-        //Deactivate old constraints
-        //TODO: Remove idle constraints (instead of deactivating)
-        leadingConstraint?.isActive = false
-        trailingConstraint?.isActive = false
-        
-        //Create new constraints with the updated border margin
         let borderMargin = self.view.bounds.width/4
-        leadingConstraint = firstCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: borderMargin)
-        trailingConstraint = contentView.trailingAnchor.constraint(equalTo: lastCard.trailingAnchor, constant: borderMargin)
-        
-        //Activate new constraints
-        leadingConstraint?.isActive = true
-        trailingConstraint?.isActive = true
+        leadingConstraint.constant = borderMargin
+        trailingConstraint.constant = borderMargin
         
         //TODO: Re-apply rotation
     }
@@ -92,44 +76,26 @@ public class CardViewController: UIViewController {
     //MARK: Private
     
     private func add(childControllers: [UIViewController]) {
-        let borderMargin = self.view.bounds.width/4
-        var prevView: UIView?
         for (index, cardViewController) in cardViewControllers.enumerated() {
-
             //Add each view controller as a child
             addChildViewController(cardViewController)
             
-            //Add view as subview
+            //Insert view in the horizontal stack view
             let cardView = cardViewController.view!
-            contentView.addSubview(cardView)
+            contentView.addArrangedSubview(cardView)
+            
+            //Set up width and height constraints
             cardView.translatesAutoresizingMaskIntoConstraints = false
-            cardView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
             cardView.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5).isActive = true
             cardView.heightAnchor.constraint(equalTo: cardView.widthAnchor).isActive = true
             
-            //Set up horizontal constraints
-            if prevView == nil {
-                //First view - Pin card to superview's leading anchor
-                leadingConstraint = cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: borderMargin)
-                leadingConstraint?.isActive = true
-                
-            } else {
-                //All other views - to to previous view's trailing anchor
-                cardView.leadingAnchor.constraint(equalTo: prevView!.trailingAnchor).isActive = true
-            }
-            
-            //Apply initial rotation for all views except the first
+            //Apply rotation for all views except the first
             if index > 0 {
                 rotate(cardView.layer, degrees: -degreesToRotate)
             }
             
             cardViewController.didMove(toParentViewController: self)
-            prevView = cardView;
         }
-        
-        //Last view - pin to container view's trailing anchor
-        trailingConstraint = contentView.trailingAnchor.constraint(equalTo: prevView!.trailingAnchor, constant: borderMargin)
-        trailingConstraint?.isActive = true
     }
     
     /// Applies a 3D rotation to the received layer
