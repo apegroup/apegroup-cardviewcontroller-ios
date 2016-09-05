@@ -27,14 +27,14 @@ public class CardViewController: UIViewController {
     
     //MARK: Configurable
     
-    public var degreesToRotate: CGFloat = 55
+    public var degreesToRotate: CGFloat = 45
+    public var backgroundCardAlpha: CGFloat = 0.65
     public var isPagingEnabled = true
     
     //MARK: Properties
     
     fileprivate var currentCardIndex: Int = 0
     fileprivate var cardViewControllers: [UIViewController] = []
-    
     private var hasLaidOutSubviews = false
     
     //MARK: IBOutlets
@@ -57,7 +57,7 @@ public class CardViewController: UIViewController {
         leadingConstraint.constant = borderMargin
         trailingConstraint.constant = borderMargin
         
-        //TODO: Re-apply rotation
+        //TODO: Re-apply rotation and alpha
     }
     
     //MARK: Life cycle
@@ -89,17 +89,22 @@ public class CardViewController: UIViewController {
             cardView.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5).isActive = true
             cardView.heightAnchor.constraint(equalTo: cardView.widthAnchor).isActive = true
             
-            //Apply rotation for all views except the first
+            //Apply rotation and alpha for all views except the first
             if index > 0 {
-                rotate(cardView.layer, degrees: -degreesToRotate)
+                applyViewTransformation(to: cardView, degrees: -degreesToRotate, alpha: backgroundCardAlpha)
             }
             
             cardViewController.didMove(toParentViewController: self)
         }
     }
     
+    fileprivate func applyViewTransformation(to view: UIView, degrees: CGFloat, alpha: CGFloat) {
+        rotate(view.layer, degrees: degrees)
+        view.alpha = max(backgroundCardAlpha, alpha)
+    }
+    
     /// Applies a 3D rotation to the received layer
-    fileprivate func rotate(_ layer: CALayer, degrees: CGFloat) {
+    private func rotate(_ layer: CALayer, degrees: CGFloat) {
         var perspective = CATransform3DIdentity
         perspective.m34 = -1/500 //500 seems to be a good value
         layer.transform = CATransform3DRotate(perspective, CGFloat(GLKMathDegreesToRadians(Float(degrees))), 0, 1, 0)
@@ -150,9 +155,9 @@ extension CardViewController: UIScrollViewDelegate {
         let sourceDegrees = sourceTransitionProgress * degreesToRotate
         let destDegrees = destTransitionProgress * degreesToRotate
         
-        //Update rotation transform accordingly
-        rotate(sourceCard.layer, degrees: sourceDegrees)
-        rotate(destinationCard.layer, degrees: destDegrees)
+        //Update rotation transform and alpha accordingly
+        applyViewTransformation(to: sourceCard, degrees: sourceDegrees, alpha: abs(destTransitionProgress))
+        applyViewTransformation(to: destinationCard, degrees: destDegrees, alpha: abs(sourceTransitionProgress))
     }
     
     /// Returns the card at the received index, or nil if the index is out of bounds
