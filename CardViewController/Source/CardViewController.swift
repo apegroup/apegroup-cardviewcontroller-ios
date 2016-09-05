@@ -72,8 +72,6 @@ public class CardViewController: UIViewController {
     
     @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var contentView: UIStackView!
-    @IBOutlet weak var leadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var trailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var contentViewTapGestureRecognizer: UITapGestureRecognizer!
     
     //MARK: Life cycle
@@ -81,6 +79,9 @@ public class CardViewController: UIViewController {
     override public func viewDidLoad() {
         super.viewDidLoad()
         contentView.spacing = cardSpacing
+        
+        let clipView = self.view as! ClipView
+        clipView.scrollView = scrollView
     }
     
     override public func viewDidAppear(_ animated: Bool) {
@@ -122,20 +123,11 @@ public class CardViewController: UIViewController {
         //A slight delay is required since the scroll view's frame size has not yet been updated to reflect the new trait collection.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             CATransaction.begin()
-            self.updateOrientationRelatedConstraints()
             self.applyInitialCardTransform()
             self.scrollView.scrollToPageAtIndex(self.pageIndexBeforeTraitCollectionChange, animated: false)
             CATransaction.commit()
         }
     }
-    
-    /// Updates the leading and trailing constraints to be 1/4 of the device width
-    private func updateOrientationRelatedConstraints() {
-        let borderMargin = self.view.bounds.width/4
-        leadingConstraint.constant = borderMargin
-        trailingConstraint.constant = borderMargin
-    }
-    
     
     //MARK: Helper
     
@@ -262,7 +254,6 @@ extension CardViewController: UIScrollViewDelegate {
         //The index of the transition destination element
         let transitionDestinationElementIndex = isGoingBackwards ? transitionLeftElementIndex : transitionRightElementIndex
         
-
         if let sourceCard = card(at: transitionSourceElementIndex) {
             //Gradually remove y rotation (i.e. move towards an y rotation of zero)
             let sourceDegrees = sourceTransitionProgress * degreesToRotateCard
@@ -289,41 +280,8 @@ extension CardViewController: UIScrollViewDelegate {
             let destZTranslation = abs(sourceTransitionProgress * maxZTranslation)
             applyViewTransformation(to: destCard, degrees: destDegrees, alpha: destAlpha, zTranslation: destZTranslation, rotateBeforeTranslate: false)
         }
-    }
-        
+    }        
     
-    ///Apply paging by updating the target content offset to the nearest card
-    public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-        guard isPagingEnabled else {
-            return
-        }
-        guard let cardSize = card(at: 0)?.bounds.width else {
-            return
-        }
-        
-        let minIndex: CGFloat = 0
-        let maxIndex = CGFloat(cards.count)
-        
-        //Calculate x coordinate of destination, including velocity
-        let velocityBoostFactor: CGFloat = 5
-        let destX = scrollView.contentOffset.x + (velocity.x * velocityBoostFactor)
-        
-        //Calculate index of destination card
-        var destCardIndex = round(destX / (cardSize + cardSpacing))
-        
-        //Avoid "jumping" to initial position when making very small swipes
-        if velocity.x > 0 {
-            destCardIndex = ceil(destX / (cardSize + cardSpacing))
-        } else {
-            destCardIndex = floor(destX / (cardSize + cardSpacing))
-        }
-        
-        //Ensure index is within bounds
-        destCardIndex = max(minIndex, min(maxIndex, destCardIndex))
-        
-        //Update target content offset
-        targetContentOffset.pointee.x = destCardIndex * (cardSize + cardSpacing)
-    }
     
     ///Save the index of the current card when the scroll view has stopped scrolling
     public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {

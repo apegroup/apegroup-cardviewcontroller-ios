@@ -67,7 +67,6 @@ extension UIScrollView {
     }
     
     func pageSize() -> CGFloat {
-        //FIXME: Make configurable (this value must correspond to the card width + card spacing)
-        return bounds.size.width / 2
+        return frame.size.width
     }
 }

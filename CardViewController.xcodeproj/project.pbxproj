@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5F3B79E41D7CC2FC00221E27 /* ClipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F3B79E31D7CC2FC00221E27 /* ClipView.swift */; };
 		5FB0D2C71D79FFA30000070F /* CardViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = 5FB0D2C51D79FFA30000070F /* CardViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5FB0D2FF1D7A01100000070F /* CardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB0D2FE1D7A01100000070F /* CardViewController.swift */; };
 		5FB0D3021D7A02D30000070F /* CardViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5FB0D3011D7A02D30000070F /* CardViewController.xib */; };
@@ -16,6 +17,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5F3B79E31D7CC2FC00221E27 /* ClipView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClipView.swift; sourceTree = "<group>"; };
 		5FB0D2C21D79FFA30000070F /* CardViewController.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = CardViewController.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FB0D2C51D79FFA30000070F /* CardViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CardViewController.h; sourceTree = "<group>"; };
 		5FB0D2C61D79FFA30000070F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -71,6 +73,7 @@
 				5FB0D3031D7A0DDB0000070F /* UIScrollView+Utils.swift */,
 				5FFA4C221D8148F200592217 /* CATransform3DUtils.swift */,
 				5FFA4C241D814C5000592217 /* CardInterpolator.swift */,
+				5F3B79E31D7CC2FC00221E27 /* ClipView.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -158,6 +161,7 @@
 			files = (
 				5FFA4C251D814C5000592217 /* CardInterpolator.swift in Sources */,
 				5FFA4C231D8148F200592217 /* CATransform3DUtils.swift in Sources */,
+				5F3B79E41D7CC2FC00221E27 /* ClipView.swift in Sources */,
 				5FB0D2FF1D7A01100000070F /* CardViewController.swift in Sources */,
 				5FB0D3041D7A0DDB0000070F /* UIScrollView+Utils.swift in Sources */,
 			);
