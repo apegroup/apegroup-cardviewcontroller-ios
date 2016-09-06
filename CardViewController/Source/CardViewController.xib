@@ -19,8 +19,13 @@
                 <subviews>
                     <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" directionalLockEnabled="YES" bounces="NO" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" translatesAutoresizingMaskIntoConstraints="NO" id="yIf-Mh-bFq">
                         <subviews>
-                            <stackView opaque="NO" contentMode="scaleToFill" alignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="b3l-Da-H5R"/>
+                            <stackView opaque="NO" contentMode="scaleToFill" alignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="b3l-Da-H5R">
+                                <connections>
+                                    <outletCollection property="gestureRecognizers" destination="rW2-Qf-cmL" appends="YES" id="zRb-4W-cF2"/>
+                                </connections>
+                            </stackView>
                         </subviews>
+                        <gestureRecognizers/>
                         <constraints>
                             <constraint firstAttribute="trailing" secondItem="b3l-Da-H5R" secondAttribute="trailing" id="Jdi-yS-8Aj"/>
                             <constraint firstItem="b3l-Da-H5R" firstAttribute="leading" secondItem="yIf-Mh-bFq" secondAttribute="leading" id="f0G-fs-twd"/>
@@ -32,6 +37,7 @@
                         </connections>
                     </scrollView>
                 </subviews>
+                <gestureRecognizers/>
                 <constraints>
                     <constraint firstItem="b3l-Da-H5R" firstAttribute="width" secondItem="0wV-td-5YW" secondAttribute="width" placeholder="YES" id="GqM-sN-SIa"/>
                     <constraint firstItem="yIf-Mh-bFq" firstAttribute="leading" secondItem="0wV-td-5YW" secondAttribute="leading" id="LHR-Ty-8P5"/>
@@ -43,11 +49,17 @@
             </view>
             <connections>
                 <outlet property="contentView" destination="b3l-Da-H5R" id="XTU-Qx-5Hw"/>
+                <outlet property="contentViewTapGestureRecognizer" destination="rW2-Qf-cmL" id="YGu-bb-rrH"/>
                 <outlet property="leadingConstraint" destination="f0G-fs-twd" id="HPj-uu-iK0"/>
                 <outlet property="scrollView" destination="yIf-Mh-bFq" id="0Iu-B3-udo"/>
                 <outlet property="trailingConstraint" destination="Jdi-yS-8Aj" id="CrO-mU-YjO"/>
             </connections>
             <point key="canvasLocation" x="1" y="-37"/>
         </viewController>
+        <tapGestureRecognizer cancelsTouchesInView="NO" id="rW2-Qf-cmL">
+            <connections>
+                <action selector="onScrollViewTapped:" destination="4hg-UC-Q7x" id="wph-nO-qZr"/>
+            </connections>
+        </tapGestureRecognizer>
     </objects>
 </document>

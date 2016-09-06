@@ -47,6 +47,7 @@ public class CardViewController: UIViewController {
     @IBOutlet weak var contentView: UIStackView!
     @IBOutlet weak var leadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var trailingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var contentViewTapGestureRecognizer: UITapGestureRecognizer!
     
     //MARK: Rotation related events
     
@@ -88,8 +89,40 @@ public class CardViewController: UIViewController {
             add(childControllers: cardViewControllers)
         }
     }
-
+    
+    @IBAction func onScrollViewTapped(_ sender: UITapGestureRecognizer) {
+        guard let currentCard = self.card(at: self.currentCardIndex) else {
+            return
+        }
+        
+        var selectedCardIndex = -1
+        let touchPoint = sender.location(in: self.contentView)
+        if touchPoint.x > currentCard.frame.maxX {
+            selectedCardIndex = self.currentCardIndex + 1
+        } else if touchPoint.x < currentCard.frame.minX {
+            selectedCardIndex = self.currentCardIndex - 1
+        }
+        
+        guard self.card(at: selectedCardIndex) != nil else {
+            return
+        }
+        
+        scrollView.isScrollEnabled = false
+        contentViewTapGestureRecognizer.isEnabled = false
+        self.scrollView.scrollToPageAtIndex(selectedCardIndex, animated: true)
+    }
+    
+    
     //MARK: Private
+    
+    /// Returns the card at the received index, or nil if the index is out of bounds
+    fileprivate func card(at index: Int) -> UIView? {
+        guard index >= 0 && index < cardViewControllers.count else {
+            return nil
+        }
+        
+        return cardViewControllers[index].view
+    }
     
     private func add(childControllers: [UIViewController]) {
         for cardViewController in cardViewControllers {
@@ -190,15 +223,6 @@ extension CardViewController: UIScrollViewDelegate {
         }
     }
     
-    /// Returns the card at the received index, or nil if the index is out of bounds
-    private func card(at index: Int) -> UIView? {
-        guard index >= 0 && index < cardViewControllers.count else {
-            return nil
-        }
-        
-        return cardViewControllers[index].view
-    }
-    
     //Update the target content offset to the nearest card
     public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
         guard isPagingEnabled else {
@@ -243,5 +267,14 @@ extension CardViewController: UIScrollViewDelegate {
     ///Save the index of the current card when the scroll view has stopped scrolling
     public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         currentCardIndex = scrollView.currentPage()
+    }
+    
+    ///Called when the scroll view ends scrolling programatically
+    public func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        currentCardIndex = scrollView.currentPage()
+        
+        //Restore the settings
+        scrollView.isScrollEnabled = true
+        contentViewTapGestureRecognizer.isEnabled = true
     }
 }
