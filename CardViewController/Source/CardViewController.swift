@@ -27,7 +27,8 @@ public class CardViewController: UIViewController {
     
     //MARK: Configurable
     
-    public var degreesToRotate: CGFloat = 45
+    public var degreesToRotateCard: CGFloat = 45
+    public var foregroundCardScaleFactor: CGFloat = 0.25
     public var backgroundCardAlpha: CGFloat = 0.65
     public var isPagingEnabled = true
     
@@ -89,25 +90,28 @@ public class CardViewController: UIViewController {
             cardView.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5).isActive = true
             cardView.heightAnchor.constraint(equalTo: cardView.widthAnchor).isActive = true
             
-            //Apply rotation and alpha for all views except the first
-            if index > 0 {
-                applyViewTransformation(to: cardView, degrees: -degreesToRotate, alpha: backgroundCardAlpha)
+            //Apply initial card transform
+            if index == 0 {
+                applyViewTransformation(to: cardView, degrees: 0, alpha: 1, scale: 1 + foregroundCardScaleFactor)
+            } else {
+                applyViewTransformation(to: cardView, degrees: -degreesToRotateCard, alpha: backgroundCardAlpha, scale: 1)
             }
             
             cardViewController.didMove(toParentViewController: self)
         }
     }
     
-    fileprivate func applyViewTransformation(to view: UIView, degrees: CGFloat, alpha: CGFloat) {
-        rotate(view.layer, degrees: degrees)
-        view.alpha = max(backgroundCardAlpha, alpha)
+    fileprivate func applyViewTransformation(to view: UIView, degrees: CGFloat, alpha: CGFloat, scale: CGFloat) {
+        view.alpha = alpha
+        rotateAndScale(view.layer, degrees: degrees, scale: scale)
     }
     
     /// Applies a 3D rotation to the received layer
-    private func rotate(_ layer: CALayer, degrees: CGFloat) {
+    private func rotateAndScale(_ layer: CALayer, degrees: CGFloat, scale: CGFloat) {
         var perspective = CATransform3DIdentity
         perspective.m34 = -1/500 //500 seems to be a good value
-        layer.transform = CATransform3DRotate(perspective, CGFloat(GLKMathDegreesToRadians(Float(degrees))), 0, 1, 0)
+        layer.transform = CATransform3DScale(perspective, scale, scale, scale)
+        layer.transform = CATransform3DRotate(layer.transform, CGFloat(GLKMathDegreesToRadians(Float(degrees))), 0, 1, 0)
     }
 }
 
@@ -145,19 +149,25 @@ extension CardViewController: UIScrollViewDelegate {
         //The index of the transition destination element
         let transitionDestinationElementIndex = isGoingBackwards ? transitionLeftElementIndex : transitionRightElementIndex
         
-        //Fetch cards involved in the transition
-        guard let sourceCard = card(at: transitionSourceElementIndex),
-            let destinationCard = card(at: transitionDestinationElementIndex) else {
-                return
-        }
-        
         //Calculate degrees to rotate
-        let sourceDegrees = sourceTransitionProgress * degreesToRotate
-        let destDegrees = destTransitionProgress * degreesToRotate
+        let sourceDegrees = sourceTransitionProgress * degreesToRotateCard
+        let destDegrees = destTransitionProgress * degreesToRotateCard
         
-        //Update rotation transform and alpha accordingly
-        applyViewTransformation(to: sourceCard, degrees: sourceDegrees, alpha: abs(destTransitionProgress))
-        applyViewTransformation(to: destinationCard, degrees: destDegrees, alpha: abs(sourceTransitionProgress))
+        //Calculate scale
+        let minScale: CGFloat = 1
+        let sourceScale = minScale + abs(destTransitionProgress * foregroundCardScaleFactor)
+        let destScale = minScale + abs(sourceTransitionProgress * foregroundCardScaleFactor)
+        
+        //Calculate alpha
+        let sourceAlpha = max(backgroundCardAlpha, abs(destTransitionProgress))
+        let destAlpha = max(backgroundCardAlpha, abs(sourceTransitionProgress))
+        
+        if let sourceCard = card(at: transitionSourceElementIndex) {
+            applyViewTransformation(to: sourceCard, degrees: sourceDegrees, alpha: sourceAlpha, scale: sourceScale)
+        }
+        if let destCard = card(at: transitionDestinationElementIndex) {
+            applyViewTransformation(to: destCard, degrees: destDegrees, alpha: destAlpha, scale: destScale)
+        }
     }
     
     /// Returns the card at the received index, or nil if the index is out of bounds
@@ -183,7 +193,8 @@ extension CardViewController: UIScrollViewDelegate {
         let maxIndex = CGFloat(cardViewControllers.count)
         
         //Calculate x coordinate of destination, including velocity
-        let destX = scrollView.contentOffset.x + velocity.x
+        let velocityBoostFactor: CGFloat = 30
+        let destX = scrollView.contentOffset.x + velocity.x * velocityBoostFactor
         
         //Calculate index of destination card
         var destCardIndex = round(destX / (cardSize + cardSpacing))
