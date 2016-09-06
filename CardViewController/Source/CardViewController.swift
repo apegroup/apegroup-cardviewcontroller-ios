@@ -38,6 +38,9 @@ public class CardViewController: UIViewController {
     fileprivate var cardViewControllers: [UIViewController] = []
     private var hasLaidOutSubviews = false
     
+    //The current page before the trait collection changes, e.g. prior to rotation occurrs
+    private var pageIndexBeforeTraitCollectionChange: Int = 0
+    
     //MARK: IBOutlets
     
     @IBOutlet weak var scrollView: UIScrollView!
@@ -47,9 +50,23 @@ public class CardViewController: UIViewController {
     
     //MARK: Rotation related events
     
+    override public func willTransition(to newCollection: UITraitCollection, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.willTransition(to: newCollection, with: coordinator)
+        pageIndexBeforeTraitCollectionChange = scrollView.currentPage()
+    }
+    
     override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        updateOrientationRelatedConstraints()
+        
+        //Restore previous page.
+        //A slight delay is required since the scroll view's frame size has not yet been updated to reflect the new trait collection.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            CATransaction.begin()
+            self.updateOrientationRelatedConstraints()
+            self.applyInitialCardTransform()
+            self.scrollView.scrollToPageAtIndex(self.pageIndexBeforeTraitCollectionChange, animated: false)
+            CATransaction.commit()
+        }
     }
     
     /// Updates the leading and trailing constraints to be 1/4 of the device width
@@ -57,8 +74,6 @@ public class CardViewController: UIViewController {
         let borderMargin = self.view.bounds.width/4
         leadingConstraint.constant = borderMargin
         trailingConstraint.constant = borderMargin
-        
-        //TODO: Re-apply rotation and alpha
     }
     
     //MARK: Life cycle
@@ -77,7 +92,7 @@ public class CardViewController: UIViewController {
     //MARK: Private
     
     private func add(childControllers: [UIViewController]) {
-        for (index, cardViewController) in cardViewControllers.enumerated() {
+        for cardViewController in cardViewControllers {
             //Add each view controller as a child
             addChildViewController(cardViewController)
             
@@ -89,15 +104,20 @@ public class CardViewController: UIViewController {
             cardView.translatesAutoresizingMaskIntoConstraints = false
             cardView.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5).isActive = true
             cardView.heightAnchor.constraint(equalTo: cardView.widthAnchor).isActive = true
+            cardViewController.didMove(toParentViewController: self)
+        }
+    }
+    
+    private func applyInitialCardTransform() {
+        for (index, cardViewController) in cardViewControllers.enumerated() {
+            let cardView = cardViewController.view!
             
-            //Apply initial card transform
-            if index == 0 {
+            if index == currentCardIndex {
                 applyViewTransformation(to: cardView, degrees: 0, alpha: 1, scale: 1 + foregroundCardScaleFactor)
             } else {
-                applyViewTransformation(to: cardView, degrees: -degreesToRotateCard, alpha: backgroundCardAlpha, scale: 1)
+                let direction: CGFloat = index < currentCardIndex ? 1 : -1
+                applyViewTransformation(to: cardView, degrees: (direction * degreesToRotateCard), alpha: backgroundCardAlpha, scale: 1)
             }
-            
-            cardViewController.didMove(toParentViewController: self)
         }
     }
     
@@ -193,8 +213,8 @@ extension CardViewController: UIScrollViewDelegate {
         let maxIndex = CGFloat(cardViewControllers.count)
         
         //Calculate x coordinate of destination, including velocity
-        let velocityBoostFactor: CGFloat = 30
-        let destX = scrollView.contentOffset.x + velocity.x * velocityBoostFactor
+        let velocityBoostFactor: CGFloat = 10
+        let destX = scrollView.contentOffset.x + (velocity.x * velocityBoostFactor)
         
         //Calculate index of destination card
         var destCardIndex = round(destX / (cardSize + cardSpacing))
