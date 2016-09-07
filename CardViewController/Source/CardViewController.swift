@@ -23,20 +23,38 @@ public struct CardViewControllerFactory {
     }
 }
 
+public typealias TransitionInterpolator = (_ transitionProgress: CGFloat) -> (CGFloat)
+
 public class CardViewController: UIViewController {
     
     //MARK: Configurable
     
+    ///The number of degrees to rotate the background cards
     public var degreesToRotateCard: CGFloat = 45
-    public var foregroundCardScaleFactor: CGFloat = 0.25
+    
+    ///The z translation factor applied to the cards during transition. The formula is (cardWidth * factor)
+    public var cardZTranslationFactor: CGFloat = 1/3
+    
+    ///The alpha of the background cards
     public var backgroundCardAlpha: CGFloat = 0.65
+    
+    ///If paging between the cards should be enabled
     public var isPagingEnabled = true
+    
+    ///The transition interpolation applied to the source card during transition
+    public var sourceTransitionInterpolator: TransitionInterpolator = Interpolator.cubicOut
+    
+    ///The transition interpolation applied to the destination card during transition
+    public var destinationTransitionInterpolator: TransitionInterpolator = Interpolator.cubicOut
     
     //MARK: Properties
     
+    private var hasLaidOutSubviews = false
     fileprivate var currentCardIndex: Int = 0
     fileprivate var cardViewControllers: [UIViewController] = []
-    private var hasLaidOutSubviews = false
+    
+    //Spacing between cards
+    fileprivate let cardSpacing: CGFloat = 0
     
     //The current page before the trait collection changes, e.g. prior to rotation occurrs
     private var pageIndexBeforeTraitCollectionChange: Int = 0
@@ -48,6 +66,45 @@ public class CardViewController: UIViewController {
     @IBOutlet weak var leadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var trailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var contentViewTapGestureRecognizer: UITapGestureRecognizer!
+    
+    //MARK: Life cycle
+    
+    override public func viewDidLoad() {
+        super.viewDidLoad()
+        contentView.spacing = cardSpacing
+    }
+    
+    override public func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // Wait until 'viewDidAppear' to layout the 'card-views' since 'self.view'
+        // has not been laid out prior to that (and therefore we don't have a reliable 'self.view.frame')
+        if !hasLaidOutSubviews {
+            hasLaidOutSubviews = true
+            add(childControllers: cardViewControllers)
+        }
+    }
+    
+    private func add(childControllers: [UIViewController]) {
+        for cardViewController in cardViewControllers {
+            //Add each view controller as a child
+            addChildViewController(cardViewController)
+            
+            //Insert view in the horizontal stack view
+            let cardView = cardViewController.view!
+            contentView.addArrangedSubview(cardView)
+            
+            //Set up width and height constraints
+            cardView.translatesAutoresizingMaskIntoConstraints = false
+            cardView.heightAnchor.constraint(equalTo: cardView.widthAnchor).isActive = true
+            
+            //A card is half the size of the view
+            //FIXME: Ugly: If we change this value we must also change the 'pageSize()' method is 'UIScrollView+Utils' (together with any eventual card spacing)
+            cardView.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5).isActive = true
+            
+            cardViewController.didMove(toParentViewController: self)
+        }
+    }
     
     //MARK: Rotation related events
     
@@ -77,43 +134,8 @@ public class CardViewController: UIViewController {
         trailingConstraint.constant = borderMargin
     }
     
-    //MARK: Life cycle
     
-    override public func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        // Wait until 'viewDidAppear' to layout the 'card-views' since 'self.view'
-        // has not been laid out prior to that (and therefore we don't have a reliable 'self.view.frame')
-        if !hasLaidOutSubviews {
-            hasLaidOutSubviews = true
-            add(childControllers: cardViewControllers)
-        }
-    }
-    
-    @IBAction func onScrollViewTapped(_ sender: UITapGestureRecognizer) {
-        guard let currentCard = self.card(at: self.currentCardIndex) else {
-            return
-        }
-        
-        var selectedCardIndex = -1
-        let touchPoint = sender.location(in: self.contentView)
-        if touchPoint.x > currentCard.frame.maxX {
-            selectedCardIndex = self.currentCardIndex + 1
-        } else if touchPoint.x < currentCard.frame.minX {
-            selectedCardIndex = self.currentCardIndex - 1
-        }
-        
-        guard self.card(at: selectedCardIndex) != nil else {
-            return
-        }
-        
-        scrollView.isScrollEnabled = false
-        contentViewTapGestureRecognizer.isEnabled = false
-        self.scrollView.scrollToPageAtIndex(selectedCardIndex, animated: true)
-    }
-    
-    
-    //MARK: Private
+    //MARK: Helper
     
     /// Returns the card at the received index, or nil if the index is out of bounds
     fileprivate func card(at index: Int) -> UIView? {
@@ -124,47 +146,78 @@ public class CardViewController: UIViewController {
         return cardViewControllers[index].view
     }
     
-    private func add(childControllers: [UIViewController]) {
-        for cardViewController in cardViewControllers {
-            //Add each view controller as a child
-            addChildViewController(cardViewController)
-            
-            //Insert view in the horizontal stack view
-            let cardView = cardViewController.view!
-            contentView.addArrangedSubview(cardView)
-            
-            //Set up width and height constraints
-            cardView.translatesAutoresizingMaskIntoConstraints = false
-            cardView.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5).isActive = true
-            cardView.heightAnchor.constraint(equalTo: cardView.widthAnchor).isActive = true
-            cardViewController.didMove(toParentViewController: self)
+    //MARK: Card navigation
+    
+    @IBAction func onScrollViewTapped(_ sender: UITapGestureRecognizer) {
+        guard let currentCard = card(at: currentCardIndex) else {
+            return
         }
+        
+        var selectedCardIndex = -1
+        let touchPoint = sender.location(in: contentView)
+        if touchPoint.x > currentCard.frame.maxX {
+            selectedCardIndex = currentCardIndex + 1
+        } else if touchPoint.x < currentCard.frame.minX {
+            selectedCardIndex = currentCardIndex - 1
+        }
+        
+        guard card(at: selectedCardIndex) != nil else {
+            return
+        }
+        
+        scrollViewWillScrollToCard()
+        scrollView.scrollToPageAtIndex(selectedCardIndex, animated: true)
     }
+    
+    ///Prepares the scroll view prior to programatically scrolling to a card
+    private func scrollViewWillScrollToCard() {
+        scrollView.isScrollEnabled = false
+        contentViewTapGestureRecognizer.isEnabled = false
+    }
+    
+    ///Restores the scroll view after programatically scrolling to a card
+    fileprivate func scrollViewDidScrollToCard() {
+        scrollView.isScrollEnabled = true
+        contentViewTapGestureRecognizer.isEnabled = true
+    }
+    
+    
+    //MARK: Card transform
     
     private func applyInitialCardTransform() {
         for (index, cardViewController) in cardViewControllers.enumerated() {
             let cardView = cardViewController.view!
             
             if index == currentCardIndex {
-                applyViewTransformation(to: cardView, degrees: 0, alpha: 1, scale: 1 + foregroundCardScaleFactor)
+                let zTranslation = (cardView.bounds.width * cardZTranslationFactor)
+                applyViewTransformation(to: cardView,
+                                        degrees: 0,
+                                        alpha: 1,
+                                        zTranslation: zTranslation,
+                                        rotateBeforeTranslate: true)
             } else {
                 let direction: CGFloat = index < currentCardIndex ? 1 : -1
-                applyViewTransformation(to: cardView, degrees: (direction * degreesToRotateCard), alpha: backgroundCardAlpha, scale: 1)
+                applyViewTransformation(to: cardView,
+                                        degrees: (direction * degreesToRotateCard),
+                                        alpha: backgroundCardAlpha,
+                                        zTranslation: 0,
+                                        rotateBeforeTranslate: true)
             }
         }
     }
     
-    fileprivate func applyViewTransformation(to view: UIView, degrees: CGFloat, alpha: CGFloat, scale: CGFloat) {
+    fileprivate func applyViewTransformation(to view: UIView,
+                                             degrees: CGFloat,
+                                             alpha: CGFloat,
+                                             zTranslation: CGFloat,
+                                             rotateBeforeTranslate: Bool) {
         view.alpha = alpha
-        rotateAndScale(view.layer, degrees: degrees, scale: scale)
-    }
-    
-    /// Applies a 3D rotation to the received layer
-    private func rotateAndScale(_ layer: CALayer, degrees: CGFloat, scale: CGFloat) {
-        var perspective = CATransform3DIdentity
-        perspective.m34 = -1/500 //500 seems to be a good value
-        layer.transform = CATransform3DScale(perspective, scale, scale, scale)
-        layer.transform = CATransform3DRotate(layer.transform, CGFloat(GLKMathDegreesToRadians(Float(degrees))), 0, 1, 0)
+        
+        if rotateBeforeTranslate {
+            CATransform3DMakeYRotationAndZTranslation(view.layer, degrees: degrees, zTranslation: zTranslation)
+        } else {
+            CATransform3DMakeZTranslationAndYRotation(view.layer, zTranslation: zTranslation, degrees: degrees)
+        }
     }
 }
 
@@ -185,10 +238,14 @@ extension CardViewController: UIScrollViewDelegate {
         let rightTransitionProgress = (1 - leftTransitionProgress)
         
         //The transition progress of the current/source page
-        let sourceTransitionProgress = isGoingBackwards ? -rightTransitionProgress : leftTransitionProgress
+        var sourceTransitionProgress = isGoingBackwards ? rightTransitionProgress : leftTransitionProgress
+        sourceTransitionProgress = sourceTransitionInterpolator(sourceTransitionProgress)
+        sourceTransitionProgress *= isGoingBackwards ? -1 : 1
         
         //The transition progress of the destination page
-        let destTransitionProgress = isGoingBackwards ? leftTransitionProgress : -rightTransitionProgress
+        var destTransitionProgress = isGoingBackwards ? leftTransitionProgress : rightTransitionProgress
+        destTransitionProgress = destinationTransitionInterpolator(destTransitionProgress)
+        destTransitionProgress *= isGoingBackwards ? 1 : -1
         
         //The index of the leftmost element involved in the transition
         let transitionLeftElementIndex = scrollView.currentPage()
@@ -202,28 +259,37 @@ extension CardViewController: UIScrollViewDelegate {
         //The index of the transition destination element
         let transitionDestinationElementIndex = isGoingBackwards ? transitionLeftElementIndex : transitionRightElementIndex
         
-        //Calculate degrees to rotate
-        let sourceDegrees = sourceTransitionProgress * degreesToRotateCard
-        let destDegrees = destTransitionProgress * degreesToRotateCard
-        
-        //Calculate scale
-        let minScale: CGFloat = 1
-        let sourceScale = minScale + abs(destTransitionProgress * foregroundCardScaleFactor)
-        let destScale = minScale + abs(sourceTransitionProgress * foregroundCardScaleFactor)
-        
-        //Calculate alpha
-        let sourceAlpha = max(backgroundCardAlpha, abs(destTransitionProgress))
-        let destAlpha = max(backgroundCardAlpha, abs(sourceTransitionProgress))
-        
+
         if let sourceCard = card(at: transitionSourceElementIndex) {
-            applyViewTransformation(to: sourceCard, degrees: sourceDegrees, alpha: sourceAlpha, scale: sourceScale)
+            //Gradually remove y rotation (i.e. move towards an y rotation of zero)
+            let sourceDegrees = sourceTransitionProgress * degreesToRotateCard
+            
+            //Gradually move towards a normal alpha (i.e. move towards an alpha value of one)
+            let sourceAlpha = max(backgroundCardAlpha, abs(destTransitionProgress))
+            
+            //Gradually move closer to the camera (i.e. move towards a positive Z translation)
+            let maxZTranslation = (sourceCard.bounds.width * cardZTranslationFactor)
+            let sourceZTranslation = abs(destTransitionProgress * maxZTranslation)
+            
+            applyViewTransformation(to: sourceCard, degrees: sourceDegrees, alpha: sourceAlpha, zTranslation: sourceZTranslation, rotateBeforeTranslate: true)
         }
+        
         if let destCard = card(at: transitionDestinationElementIndex) {
-            applyViewTransformation(to: destCard, degrees: destDegrees, alpha: destAlpha, scale: destScale)
+            //Gradually add y rotation (i.e. move towards an y rotation of 'self.degreesToRotate')
+            let destDegrees = destTransitionProgress * degreesToRotateCard
+            
+            //Gradually move towards a faded alpha (i.e. move towards an alpha value of 0..1)
+            let destAlpha = max(backgroundCardAlpha, abs(sourceTransitionProgress))
+            let maxZTranslation = (destCard.bounds.width * cardZTranslationFactor)
+            
+            //Gradually move away to the camera (i.e. move back towards the normal z translation of zero)
+            let destZTranslation = abs(sourceTransitionProgress * maxZTranslation)
+            applyViewTransformation(to: destCard, degrees: destDegrees, alpha: destAlpha, zTranslation: destZTranslation, rotateBeforeTranslate: false)
         }
     }
+        
     
-    //Update the target content offset to the nearest card
+    ///Apply paging by updating the target content offset to the nearest card
     public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
         guard isPagingEnabled else {
             return
@@ -232,7 +298,6 @@ extension CardViewController: UIScrollViewDelegate {
             return
         }
         
-        let cardSpacing: CGFloat = 0
         let minIndex: CGFloat = 0
         let maxIndex = CGFloat(cardViewControllers.count)
         
@@ -269,12 +334,11 @@ extension CardViewController: UIScrollViewDelegate {
         currentCardIndex = scrollView.currentPage()
     }
     
-    ///Called when the scroll view ends scrolling programatically
+    ///Called when the scroll view ends scrolling programatically (e.g. when a user taps on a card)
     public func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
         currentCardIndex = scrollView.currentPage()
         
         //Restore the settings
-        scrollView.isScrollEnabled = true
-        contentViewTapGestureRecognizer.isEnabled = true
+        scrollViewDidScrollToCard()
     }
 }
