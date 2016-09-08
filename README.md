@@ -28,7 +28,7 @@
 
 ## Usage example:
 Get started with 3 easy steps:
-  1. Set up cards (i.e. UIViewControllers) to be presented in the CardViewController 
+  1. Set up cards (i.e. UIViews) to be presented in the CardViewController 
  
   2. Create the CardViewController
 
@@ -38,11 +38,11 @@ Get started with 3 easy steps:
 import CardViewController
 
 func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-  //1. Create view controllers to be presented in the CardViewController:
-  let cardViewControllers: [UIViewController] = createViewControllers(count: 4)
+  //1. Create card views to be presented in the CardViewController:
+  let cardViews: [UIView] = ...
 
   //2. Create the cardViewController:
-  let cardVc = CardViewControllerFactory.make(cards: cardViewControllers)
+  let cardVc = CardViewControllerFactory.make(cards: cardsViews)
 
   //3. *Optional* Configure the card view controller:
 
@@ -73,7 +73,7 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 }
 
 extension AppDelegate: CardViewControllerDelegate {
-  func cardViewController(_ cardViewController: CardViewController, didSelect viewController: UIViewController, at index: Int) {
+  func cardViewController(_ cardViewController: CardViewController, didSelect card: UIView, at index: Int) {
     print("did select card at index: \(index)")
   }
 }

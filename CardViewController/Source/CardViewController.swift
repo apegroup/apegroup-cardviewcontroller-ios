@@ -11,14 +11,14 @@ import GLKit
 
 public struct CardViewControllerFactory {
     
-    static public func make(cards: [UIViewController]) -> CardViewController {
+    static public func make(cards: [UIView]) -> CardViewController {
         
         let nib = UINib(nibName: String(describing: CardViewController.self),
                         bundle: Bundle(for: CardViewController.self))
             .instantiate(withOwner: nil, options: nil)
         
         let vc = nib.first as! CardViewController
-        vc.cardViewControllers = cards
+        vc.cards = cards
         return vc
     }
 }
@@ -26,7 +26,7 @@ public struct CardViewControllerFactory {
 public protocol CardViewControllerDelegate {
     
     func cardViewController(_ cardViewController: CardViewController,
-                            didSelect viewController: UIViewController,
+                            didSelect card: UIView,
                             at index: Int)
 }
 
@@ -60,7 +60,7 @@ public class CardViewController: UIViewController {
     
     private var hasLaidOutSubviews = false
     fileprivate var currentCardIndex: Int = 0
-    fileprivate var cardViewControllers: [UIViewController] = []
+    fileprivate var cards: [UIView] = []
     
     //Spacing between cards
     fileprivate let cardSpacing: CGFloat = 0
@@ -90,28 +90,21 @@ public class CardViewController: UIViewController {
         // has not been laid out prior to that (and therefore we don't have a reliable 'self.view.frame')
         if !hasLaidOutSubviews {
             hasLaidOutSubviews = true
-            add(childControllers: cardViewControllers)
+            add(cards: cards)
         }
     }
     
-    private func add(childControllers: [UIViewController]) {
-        for cardViewController in cardViewControllers {
-            //Add each view controller as a child
-            addChildViewController(cardViewController)
-            
-            //Insert view in the horizontal stack view
-            let cardView = cardViewController.view!
-            contentView.addArrangedSubview(cardView)
+    private func add(cards: [UIView]) {
+        for card in cards {
+            contentView.addArrangedSubview(card)
             
             //Set up width and height constraints
-            cardView.translatesAutoresizingMaskIntoConstraints = false
-            cardView.heightAnchor.constraint(equalTo: cardView.widthAnchor).isActive = true
+            card.translatesAutoresizingMaskIntoConstraints = false
+            card.heightAnchor.constraint(equalTo: card.widthAnchor).isActive = true
             
             //A card is half the size of the view
             //FIXME: Ugly: If we change this value we must also change the 'pageSize()' method is 'UIScrollView+Utils' (together with any eventual card spacing)
-            cardView.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5).isActive = true
-            
-            cardViewController.didMove(toParentViewController: self)
+            card.widthAnchor.constraint(equalTo: self.view.widthAnchor, multiplier: 0.5).isActive = true
         }
     }
     
@@ -148,11 +141,11 @@ public class CardViewController: UIViewController {
     
     /// Returns the card at the received index, or nil if the index is out of bounds
     fileprivate func card(at index: Int) -> UIView? {
-        guard index >= 0 && index < cardViewControllers.count else {
+        guard index >= 0 && index < cards.count else {
             return nil
         }
         
-        return cardViewControllers[index].view
+        return cards[index]
     }
     
     //MARK: Card navigation
@@ -169,8 +162,7 @@ public class CardViewController: UIViewController {
         } else if touchPoint.x < currentCard.frame.minX {
             selectedCardIndex = currentCardIndex - 1
         } else {
-            let currentCardViewController = cardViewControllers[currentCardIndex]
-            delegate?.cardViewController(self, didSelect: currentCardViewController, at: currentCardIndex)
+            delegate?.cardViewController(self, didSelect: currentCard, at: currentCardIndex)
             return
         }
         
@@ -198,19 +190,17 @@ public class CardViewController: UIViewController {
     //MARK: Card transform
     
     private func applyInitialCardTransform() {
-        for (index, cardViewController) in cardViewControllers.enumerated() {
-            let cardView = cardViewController.view!
-            
+        for (index, card) in cards.enumerated() {
             if index == currentCardIndex {
-                let zTranslation = (cardView.bounds.width * cardZTranslationFactor)
-                applyViewTransformation(to: cardView,
+                let zTranslation = (card.bounds.width * cardZTranslationFactor)
+                applyViewTransformation(to: card,
                                         degrees: 0,
                                         alpha: 1,
                                         zTranslation: zTranslation,
                                         rotateBeforeTranslate: true)
             } else {
                 let direction: CGFloat = index < currentCardIndex ? 1 : -1
-                applyViewTransformation(to: cardView,
+                applyViewTransformation(to: card,
                                         degrees: (direction * degreesToRotateCard),
                                         alpha: backgroundCardAlpha,
                                         zTranslation: 0,
@@ -312,10 +302,10 @@ extension CardViewController: UIScrollViewDelegate {
         }
         
         let minIndex: CGFloat = 0
-        let maxIndex = CGFloat(cardViewControllers.count)
+        let maxIndex = CGFloat(cards.count)
         
         //Calculate x coordinate of destination, including velocity
-        let velocityBoostFactor: CGFloat = 10
+        let velocityBoostFactor: CGFloat = 5
         let destX = scrollView.contentOffset.x + (velocity.x * velocityBoostFactor)
         
         //Calculate index of destination card
