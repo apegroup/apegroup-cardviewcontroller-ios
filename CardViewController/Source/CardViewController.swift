@@ -23,11 +23,20 @@ public struct CardViewControllerFactory {
     }
 }
 
+public protocol CardViewControllerDelegate {
+    
+    func cardViewController(_ cardViewController: CardViewController,
+                            didSelect viewController: UIViewController,
+                            at index: Int)
+}
+
 public typealias TransitionInterpolator = (_ transitionProgress: CGFloat) -> (CGFloat)
 
 public class CardViewController: UIViewController {
     
     //MARK: Configurable
+    
+    public var delegate: CardViewControllerDelegate? = nil
     
     ///The number of degrees to rotate the background cards
     public var degreesToRotateCard: CGFloat = 45
@@ -159,6 +168,10 @@ public class CardViewController: UIViewController {
             selectedCardIndex = currentCardIndex + 1
         } else if touchPoint.x < currentCard.frame.minX {
             selectedCardIndex = currentCardIndex - 1
+        } else {
+            let currentCardViewController = cardViewControllers[currentCardIndex]
+            delegate?.cardViewController(self, didSelect: currentCardViewController, at: currentCardIndex)
+            return
         }
         
         guard card(at: selectedCardIndex) != nil else {

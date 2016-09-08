@@ -1,9 +1,8 @@
 Framework:
 - Height must be >= width or else the rotation animation looks awkward (e.g. it looks awkard if height is width/2)
 - Landscape foreground card is outside of screen?
-- Readme + example
 
 Misc/Improvements:
+- Initialise CardViewController with an array of UIViews (not only UIViewControllers
 
 Both:
-- Comment

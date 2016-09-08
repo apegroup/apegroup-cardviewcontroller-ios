@@ -45,6 +45,9 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
   let cardVc = CardViewControllerFactory.make(cards: cardViewControllers)
 
   //3. *Optional* Configure the card view controller:
+
+  cardVc.delegate = self
+
   //The number of degrees to rotate the background cards
   cardVc.degreesToRotateCard = 45
 
@@ -67,6 +70,14 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
   window?.rootViewController = cardVc
   window?.makeKeyAndVisible()
   return true
+}
+
+extension AppDelegate: CardViewControllerDelegate {
+  func cardViewController(_ cardViewController: CardViewController, didSelect viewController: UIViewController, at index: Int) {
+    print("did select card at index: \(index)")
+  }
+}
+
 
 ```
 
