@@ -12,7 +12,7 @@
 		5FB0D3021D7A02D30000070F /* CardViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5FB0D3011D7A02D30000070F /* CardViewController.xib */; };
 		5FB0D3041D7A0DDB0000070F /* UIScrollView+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FB0D3031D7A0DDB0000070F /* UIScrollView+Utils.swift */; };
 		5FFA4C231D8148F200592217 /* CATransform3DUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFA4C221D8148F200592217 /* CATransform3DUtils.swift */; };
-		5FFA4C251D814C5000592217 /* Interpolator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFA4C241D814C5000592217 /* Interpolator.swift */; };
+		5FFA4C251D814C5000592217 /* CardInterpolator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFA4C241D814C5000592217 /* CardInterpolator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,7 +23,7 @@
 		5FB0D3011D7A02D30000070F /* CardViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = CardViewController.xib; sourceTree = "<group>"; };
 		5FB0D3031D7A0DDB0000070F /* UIScrollView+Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UIScrollView+Utils.swift"; sourceTree = "<group>"; };
 		5FFA4C221D8148F200592217 /* CATransform3DUtils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CATransform3DUtils.swift; sourceTree = "<group>"; };
-		5FFA4C241D814C5000592217 /* Interpolator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Interpolator.swift; sourceTree = "<group>"; };
+		5FFA4C241D814C5000592217 /* CardInterpolator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardInterpolator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,7 +70,7 @@
 				5FB0D3011D7A02D30000070F /* CardViewController.xib */,
 				5FB0D3031D7A0DDB0000070F /* UIScrollView+Utils.swift */,
 				5FFA4C221D8148F200592217 /* CATransform3DUtils.swift */,
-				5FFA4C241D814C5000592217 /* Interpolator.swift */,
+				5FFA4C241D814C5000592217 /* CardInterpolator.swift */,
 			);
 			path = Source;
 			sourceTree = "<group>";
@@ -156,7 +156,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5FFA4C251D814C5000592217 /* Interpolator.swift in Sources */,
+				5FFA4C251D814C5000592217 /* CardInterpolator.swift in Sources */,
 				5FFA4C231D8148F200592217 /* CATransform3DUtils.swift in Sources */,
 				5FB0D2FF1D7A01100000070F /* CardViewController.swift in Sources */,
 				5FB0D3041D7A0DDB0000070F /* UIScrollView+Utils.swift in Sources */,

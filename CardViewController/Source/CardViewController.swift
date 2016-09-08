@@ -42,10 +42,10 @@ public class CardViewController: UIViewController {
     public var isPagingEnabled = true
     
     ///The transition interpolation applied to the source card during transition
-    public var sourceTransitionInterpolator: TransitionInterpolator = Interpolator.cubicOut
+    public var sourceTransitionInterpolator: TransitionInterpolator = CardInterpolator.cubicOut
     
     ///The transition interpolation applied to the destination card during transition
-    public var destinationTransitionInterpolator: TransitionInterpolator = Interpolator.cubicOut
+    public var destinationTransitionInterpolator: TransitionInterpolator = CardInterpolator.cubicOut
     
     //MARK: Properties
     
