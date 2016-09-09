@@ -47,6 +47,9 @@ public class CardViewController: UIViewController {
     ///The alpha of the background cards
     public var backgroundCardAlpha: CGFloat = 0.65
     
+    ///If the edge cards should bounce when scrolling beyond the edges
+    public var isBounceEnabled = true
+    
     ///If paging between the cards should be enabled
     public var isPagingEnabled = true
     
@@ -81,6 +84,7 @@ public class CardViewController: UIViewController {
     override public func viewDidLoad() {
         super.viewDidLoad()
         contentView.spacing = cardSpacing
+        scrollView.bounces = isBounceEnabled
     }
     
     override public func viewDidAppear(_ animated: Bool) {
@@ -262,7 +266,6 @@ extension CardViewController: UIScrollViewDelegate {
         //The index of the transition destination element
         let transitionDestinationElementIndex = isGoingBackwards ? transitionLeftElementIndex : transitionRightElementIndex
         
-
         if let sourceCard = card(at: transitionSourceElementIndex) {
             //Gradually remove y rotation (i.e. move towards an y rotation of zero)
             let sourceDegrees = sourceTransitionProgress * degreesToRotateCard
@@ -273,7 +276,6 @@ extension CardViewController: UIScrollViewDelegate {
             //Gradually move closer to the camera (i.e. move towards a positive Z translation)
             let maxZTranslation = (sourceCard.bounds.width * cardZTranslationFactor)
             let sourceZTranslation = abs(destTransitionProgress * maxZTranslation)
-            
             applyViewTransformation(to: sourceCard, degrees: sourceDegrees, alpha: sourceAlpha, zTranslation: sourceZTranslation, rotateBeforeTranslate: true)
         }
         
@@ -289,8 +291,16 @@ extension CardViewController: UIScrollViewDelegate {
             let destZTranslation = abs(sourceTransitionProgress * maxZTranslation)
             applyViewTransformation(to: destCard, degrees: destDegrees, alpha: destAlpha, zTranslation: destZTranslation, rotateBeforeTranslate: false)
         }
-    }
         
+        //Restore the previous source card's view transform to the 'initial background state'
+        //since 'scrollViewDidScroll' may not be called for every transition progress percentage (0-1) if the user is scrolling very quickly
+        //and may therefor end up in a halfway state
+        let previousSourceIndex = transitionSourceElementIndex + (isGoingBackwards ? 1 : -1)
+        if let previousSourceCard = card(at: previousSourceIndex) {
+            let degrees = degreesToRotateCard * (isGoingBackwards ? -1 : 1)
+            applyViewTransformation(to: previousSourceCard, degrees: degrees, alpha: backgroundCardAlpha, zTranslation: 0, rotateBeforeTranslate: true)
+        }
+    }
     
     ///Apply paging by updating the target content offset to the nearest card
     public func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
